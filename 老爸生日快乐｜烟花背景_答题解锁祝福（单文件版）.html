@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>老爸生日快乐！🎉</title>
+  <style>
+    :root{
+      --card-bg: rgba(255,255,255,.12);
+      --card-blur: blur(10px);
+      --brand: #ffd166;
+      --ok: #06d6a0;
+      --warn: #ef476f;
+      --text: #f8fafc;
+      --muted: #cbd5e1;
+      --shadow: 0 10px 30px rgba(0,0,0,.25);
+    }
+    *{box-sizing: border-box}
+    html,body{height:100%;margin:0;background:#0b1020;color:var(--text);font-family:-apple-system, BlinkMacSystemFont, "PingFang SC", "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Noto Sans CJK SC", "Helvetica Neue", Arial, "Hiragino Sans GB", "Microsoft YaHei", sans-serif}
+    #stage{position:fixed;inset:0;background:radial-gradient(1200px 600px at 50% 120%, #09122b 10%, #0b1020 60%, #030712 100%);} 
+    canvas{display:block;width:100%;height:100%}
+
+    .wrap{position:relative;z-index:2;min-height:100%;display:grid;place-items:center;padding:24px}
+
+    .card{width:min(680px,92vw);background:var(--card-bg);backdrop-filter:var(--card-blur);border:1px solid rgba(255,255,255,.08);border-radius:24px;box-shadow:var(--shadow);padding:28px 24px}
+    .title{display:flex;align-items:center;gap:12px;font-weight:800;letter-spacing:.5px}
+    .badge{padding:4px 10px;border-radius:999px;background:linear-gradient(135deg,#7c3aed,#06b6d4);font-size:12px}
+    .progress{height:8px;background:rgba(255,255,255,.12);border-radius:999px;overflow:hidden;margin:16px 0 4px}
+    .bar{height:100%;width:0;background:linear-gradient(90deg, #60a5fa, #a78bfa, #f472b6);transition:width .35s ease}
+
+    .q{font-size:22px;line-height:1.4;margin:12px 0 18px}
+    .options{display:grid;grid-template-columns:1fr;gap:12px}
+    .btn{position:relative;border:none;border-radius:14px;padding:14px 16px;background:rgba(255,255,255,.08);color:var(--text);font-size:16px;cursor:pointer;transition:transform .08s ease, background .2s ease, box-shadow .2s ease}
+    .btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.12)}
+    .btn:active{transform:translateY(0)}
+    .btn.ok{background:rgba(6,214,160,.18);box-shadow:0 0 0 2px rgba(6,214,160,.35) inset}
+    .btn.no{background:rgba(239,71,111,.18);box-shadow:0 0 0 2px rgba(239,71,111,.35) inset}
+
+    .hint{min-height:22px;color:var(--muted);margin-top:8px}
+
+    .footer{display:flex;justify-content:space-between;align-items:center;margin-top:16px;color:var(--muted);font-size:13px}
+
+    .done{display:none;flex-direction:column;align-items:center;text-align:center;gap:14px}
+    .done.show{display:flex}
+    .done h1{font-size:34px;margin:0}
+    .msgs{display:flex;flex-direction:column;gap:10px;width:100%}
+    .msg{opacity:0;transform:translateY(8px);transition:opacity .5s ease, transform .5s ease;padding:14px 16px;border-radius:14px;background:rgba(255,255,255,.08);box-shadow:var(--shadow);border:1px solid rgba(255,255,255,.06);text-align:left}
+    .msg.show{opacity:1;transform:none}
+    .again{margin-top:6px}
+
+    .shake{animation:shake .35s linear}
+    @keyframes shake{10%{transform:translateX(-4px)} 20%{transform:translateX(4px)} 30%{transform:translateX(-4px)} 40%{transform:translateX(4px)} 50%{transform:translateX(-2px)} 60%{transform:translateX(2px)} 70%{transform:translateX(-2px)} 80%{transform:translateX(2px)} 90%{transform:translateX(0)} }
+
+    .credit{position:fixed;right:10px;bottom:8px;z-index:3;font-size:12px;color:#94a3b8;opacity:.8}
+    .credit a{color:#c7d2fe;text-decoration:none}
+
+    .musicBtn{position:fixed;left:10px;top:10px;z-index:4;border:none;border-radius:999px;padding:10px 14px;background:rgba(255,255,255,.14);color:#f8fafc;backdrop-filter:blur(10px);box-shadow:0 8px 20px rgba(0,0,0,.25);cursor:pointer}
+    .musicBtn:hover{background:rgba(255,255,255,.2)}
+
+    /* 🎂 蛋糕与蜡烛样式 */
+    .cakeStage{display:none;flex-direction:column;align-items:center;text-align:center;gap:16px}
+    .cakeStage.show{display:flex}
+    .cake{position:relative;width:180px;height:110px;background:linear-gradient(180deg,#ffe8a3,#ffc96b);border-radius:16px 16px 12px 12px;box-shadow:0 10px 20px rgba(0,0,0,.25) inset, 0 6px 18px rgba(0,0,0,.25);margin-bottom:24px}
+    .cake::before{content:"";position:absolute;left:0;right:0;top:-18px;height:26px;border-radius:16px 16px 0 0;background:repeating-linear-gradient(135deg,#ff8fab 0 12px,#ffd6a5 12px 24px)}
+    .candles{position:absolute;left:50%;top:-22px;transform:translateX(-50%);display:flex;gap:22px}
+    .candle{width:8px;height:28px;border-radius:4px;background:#fff}
+    .flame{position:absolute;left:50%;top:-12px;transform:translateX(-50%);width:10px;height:14px;background:radial-gradient(circle at 50% 60%, #fff 0 35%, #ffd166 36% 60%, rgba(255,209,102,.2) 61%);border-radius:50%;filter:blur(.2px);animation:flicker .12s infinite alternate}
+    @keyframes flicker{from{transform:translateX(-50%) scale(1)} to{transform:translateX(-50%) scale(1.08)}}
+    .cake.out .flame{display:none}
+    .blowText{color:#e2e8f0;font-size:16px;margin-top:8px}
+  </style>
+</head>
+<body>
+  <div id="stage"><canvas id="fx"></canvas></div>
+
+  <div class="wrap">
+    <div class="card" id="quizCard">
+      <div class="title">
+        <span class="badge">小挑战</span>
+        <span>答对就能领取专属祝福～</span>
+      </div>
+      <div class="progress" aria-hidden="true"><div class="bar" id="bar"></div></div>
+
+      <!-- ✅ 测验结构，确保存在 qText / opts / hint / stepTxt 元素 -->
+      <div id="quiz">
+        <div class="q" id="qText">加载中...</div>
+        <div class="options" id="opts"></div>
+        <div class="hint" id="hint" aria-live="polite"></div>
+        <div class="footer">
+          <span id="stepTxt">第 1/1 题</span>
+          <small>祝：老爸生日快乐 🎂</small>
+        </div>
+      </div>
+
+      <!-- 🎂 蛋糕舞台（通关后显示） -->
+      <div class="cakeStage" id="cakeStage" aria-live="polite">
+        <h2 style="margin:0">🎂 祝老爸生日快乐！</h2>
+        <div class="cake" id="cake">
+          <div class="candles">
+            <div class="candle"><span class="flame"></span></div>
+            <div class="candle"><span class="flame"></span></div>
+            <div class="candle"><span class="flame"></span></div>
+          </div>
+        </div>
+        <div class="blowText" id="blowText">吹一下</div>
+      </div>
+
+      <!-- 🎉 祝福舞台 -->
+      <div class="done" id="done">
+        <h1>🎉 恭喜通关！</h1>
+        <p style="margin:0;color:#cbd5e1">专属祝福已解锁👇</p>
+        <div class="msgs" id="msgs"></div>
+        <button class="btn again" id="again">再看一遍烟花 & 祝福</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="credit">💡 提示：点击或轻触屏幕也会放烟花～</div>
+  <button id="musicBtn" class="musicBtn" aria-pressed="false" title="播放/暂停背景音乐">🎵 背景音乐</button>
+
+  <script>
+    // ====== 题库（可按需修改） ======
+    const QUESTIONS = [
+      {
+        q: "今天谁最帅？",
+        options: ["老爸", "老妈", "小郭"],
+        answerIndex: 0,
+      },
+      {
+        q: "今天谁过生日？",
+        options: ["老爸", "老妈", "小郭"],
+        answerIndex: 0,
+      },
+      {
+        q: "收到祝福后要做什么？",
+        options: ["开心笑一下", "立刻加班", "去跑十公里"],
+        answerIndex: 0,
+      },
+    ];
+
+    // ====== 专属祝福 ======
+    const BLESSINGS = [
+      "小挑战通关！专属祝福来啦～",
+      "感谢你每天辛苦赚钱养家",
+      "愿你少点烦恼，多点开心",
+      "吃嘛嘛香，身体倍儿棒",
+      "永远是我最靠谱的老爸！❤️",
+      "你最可爱的宝贝女儿刘浩然。",
+    ];
+
+    // ====== 背景音乐（WebAudio） ======
+    let audioCtx, isPlaying = false, playTimer = null, osc = null, gain = null;
+    const musicBtn = document.getElementById('musicBtn');
+    // C大调「生日快乐歌」简易旋律（频率Hz，时值ms）
+    const MELODY = [
+      // 祝你生日快乐
+      [264,400],[264,200],[297,600],[264,600],[352,600],[330,900],
+      // 祝你生日快乐
+      [264,400],[264,200],[297,600],[264,600],[396,600],[352,900],
+      // 祝你生日快乐，亲爱的××
+      [264,400],[264,200],[528,600],[440,600],[352,600],[330,600],[297,900],
+      // 祝你生日快乐
+      [466,400],[466,200],[440,600],[352,600],[396,600],[352,900]
+    ];
+
+    function startMusic(){
+      if(isPlaying) return;
+      if(!audioCtx){
+        const AC = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AC();
+      }
+      isPlaying = true;
+      musicBtn.setAttribute('aria-pressed','true');
+      musicBtn.textContent = '🎵 正在播放';
+      let i = 0;
+      const playNext = ()=>{
+        if(!isPlaying) return;
+        const [freq, dur] = MELODY[i];
+        // 创建一次性音符
+        osc = audioCtx.createOscillator();
+        gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.18, audioCtx.currentTime + 0.02);
+        gain.gain.linearRampToValueAtTime(0.15, audioCtx.currentTime + (dur/1000) - 0.04);
+        gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + (dur/1000));
+        osc.connect(gain).connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + (dur/1000));
+        i = (i + 1) % MELODY.length; // 循环播放
+        playTimer = setTimeout(playNext, dur);
+      };
+      playNext();
+    }
+
+    function stopMusic(){
+      isPlaying = false;
+      musicBtn.setAttribute('aria-pressed','false');
+      musicBtn.textContent = '🎵 背景音乐';
+      if(playTimer) { clearTimeout(playTimer); playTimer = null; }
+      try{ if(osc) osc.stop(); }catch(e){}
+    }
+
+    function toggleMusic(){
+      if(!isPlaying) startMusic(); else stopMusic();
+    }
+
+    function ensureMusicStarted(){
+      // 在首次正确答题后尝试启动（规避自动播放限制）
+      if(!isPlaying) startMusic();
+    }
+
+    musicBtn?.addEventListener('click', ()=>{
+      // 用户手势触发，确保AudioContext可用
+      if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      toggleMusic();
+    });
+
+    // ====== 简易测验逻辑 ======
+    const qText = document.getElementById('qText');
+    const opts = document.getElementById('opts');
+    const hint = document.getElementById('hint');
+    const stepTxt = document.getElementById('stepTxt');
+    const bar = document.getElementById('bar');
+    const quiz = document.getElementById('quiz');
+    const done = document.getElementById('done');
+    const msgs = document.getElementById('msgs');
+    const again = document.getElementById('again');
+
+    let idx = 0;
+
+    function renderQuestion() {
+      const total = QUESTIONS.length;
+      const cur = QUESTIONS[idx];
+      // 防御：若元素异常缺失，直接中止渲染并给出提示
+      if(!qText || !opts || !stepTxt){
+        console.error('关键节点缺失，无法渲染题目');
+        return;
+      }
+      qText.textContent = cur.q;
+      stepTxt.textContent = `第 ${idx+1}/${total} 题`;
+      bar.style.width = `${((idx)/total)*100}%`;
+      hint.textContent = '';
+      opts.innerHTML = '';
+      cur.options.forEach((text, i)=>{
+        const b = document.createElement('button');
+        b.className = 'btn';
+        b.textContent = text;
+        b.addEventListener('click', ()=> selectOption(i));
+        opts.appendChild(b);
+      });
+    }
+
+    function selectOption(i){
+      const cur = QUESTIONS[idx];
+      const buttons = [...document.querySelectorAll('.options .btn')];
+      const correct = i === cur.answerIndex;
+      buttons.forEach((b,k)=> b.classList.toggle('ok', k===cur.answerIndex));
+      if(!correct){
+        buttons[i].classList.add('no');
+        hint.textContent = '差一点点哦，再仔细想想吧。';
+        shakeCard();
+        return;
+      }
+      // 正确：轻微庆祝 + 播放音乐 + 下一题或完成
+      sparkleAt(Math.random()*innerWidth, Math.random()*innerHeight*0.5+innerHeight*0.2);
+      ensureMusicStarted();
+      setTimeout(()=>{
+        idx++;
+        if(idx < QUESTIONS.length){
+          renderQuestion();
+        }else{
+          finish();
+        }
+      }, 450);
+    }
+
+    function shakeCard(){
+      const card = document.getElementById('quizCard');
+      card.classList.remove('shake');
+      // 强制重排以重新触发动画
+      void card.offsetWidth;
+      card.classList.add('shake');
+    }
+
+    function finish(){
+      // 满进度
+      bar.style.width = '100%';
+      quiz.style.display = 'none';
+      // 显示蛋糕和蜡烛
+      document.getElementById('cakeStage').classList.add('show');
+      const cakeEl = document.getElementById('cake');
+      const blowEl = document.getElementById('blowText');
+
+      // 5秒后自动"吹"灭蜡烛
+      setTimeout(()=>{
+        cakeEl.classList.add('out'); // 熄灭
+        blowEl.textContent = '许个愿吧';
+        // 小烟花庆祝
+        sparkleAt(innerWidth*0.5, innerHeight*0.28, 120);
+        // 再过 800ms 展示祝福
+        setTimeout(()=>{
+          document.getElementById('cakeStage').classList.remove('show');
+          done.classList.add('show');
+          showBlessings();
+          sparkleAt(innerWidth*0.5, innerHeight*0.35, 140);
+          sparkleAt(innerWidth*0.75, innerHeight*0.42, 120);
+          sparkleAt(innerWidth*0.25, innerHeight*0.42, 120);
+        }, 5000);
+      }, 5000);
+    }
+
+    function showBlessings(){
+      msgs.innerHTML = '';
+      BLESSINGS.forEach((line, i)=>{
+        const p = document.createElement('div');
+        p.className = 'msg';
+        p.textContent = '';
+        msgs.appendChild(p);
+        setTimeout(()=>{
+          typeText(p, line, 18);
+          p.classList.add('show');
+        }, i*900);
+      });
+    }
+
+    again.addEventListener('click', ()=>{
+      done.classList.remove('show');
+      quiz.style.display = '';
+      idx = 0; renderQuestion();
+      // 连放三次烟花
+      for(let k=0;k<3;k++) setTimeout(()=> sparkleAt(Math.random()*innerWidth, innerHeight*0.3 + Math.random()*innerHeight*0.4), 250*k);
+    });
+
+    function typeText(el, text, speed=20){
+      let i = 0;
+      const tick = ()=>{
+        if(i<=text.length){
+          el.textContent = text.slice(0,i);
+          i++;
+          setTimeout(tick, speed);
+        }
+      };
+      tick();
+    }
+
+    // ====== 烟花特效（Canvas） ======
+    const cvs = document.getElementById('fx');
+    const ctx = cvs.getContext('2d');
+    let W, H, DPR;
+
+    function resize(){
+      DPR = Math.min(2, devicePixelRatio || 1);
+      W = cvs.width = innerWidth * DPR;
+      H = cvs.height = innerHeight * DPR;
+      cvs.style.width = innerWidth + 'px';
+      cvs.style.height = innerHeight + 'px';
+      ctx.setTransform(DPR,0,0,DPR,0,0);
+    }
+    addEventListener('resize', resize);
+    resize();
+
+    const rockets = [];
+    const particles = [];
+    const gravity = 0.08;
+
+    function launch(x){
+      rockets.push({x, y: H/DPR, vx: (Math.random()-0.5)*1.2, vy: - (5.5 + Math.random()*2.5), color: randColor(), life: 50 + Math.random()*20});
+    }
+
+    function explode(x, y, power=100, color){
+      const count = power;
+      for(let i=0;i<count;i++){
+        const a = Math.random()*Math.PI*2;
+        const speed = Math.random()*3.2 + 1.2;
+        particles.push({
+          x, y, vx: Math.cos(a)*speed, vy: Math.sin(a)*speed, alpha:1, decay: 0.008 + Math.random()*0.015, color: color || randColor(), size: 2 + Math.random()*2
+        });
+      }
+    }
+
+    function randColor(){
+      const palette = ['#ff6b6b','#ffd166','#06d6a0','#4dabf7','#a78bfa','#f472b6','#facc15'];
+      return palette[(Math.random()*palette.length)|0];
+    }
+
+    function sparkleAt(px, py, power){
+      explode(px, py, power||90);
+    }
+
+    let last = performance.now();
+    function tick(now){
+      const dt = Math.min(33, now - last); // ms
+      last = now;
+      // 背景渐隐
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.fillStyle = 'rgba(3,7,18,0.35)';
+      ctx.fillRect(0,0,innerWidth,innerHeight);
+
+      // 随机发射火箭
+      if(Math.random() < 0.03) launch(Math.random()*innerWidth);
+
+      // 更新火箭
+      ctx.globalCompositeOperation = 'lighter';
+      rockets.forEach((r, i)=>{
+        r.x += r.vx;
+        r.y += r.vy;
+        r.vy += gravity * -0.15; // 向上衰减
+        r.life -= 1;
+        // 画火箭
+        ctx.beginPath();
+        ctx.arc(r.x, r.y, 2.2, 0, Math.PI*2);
+        ctx.fillStyle = r.color;
+        ctx.fill();
+        // 轨迹
+        ctx.fillStyle = 'rgba(255,255,255,.35)';
+        ctx.fillRect(r.x-0.5, r.y+6, 1, 12);
+        if(r.vy >= -0.5 || r.life<=0){
+          explode(r.x, r.y, 90 + Math.random()*50, r.color);
+          rockets.splice(i,1);
+        }
+      });
+
+      // 更新粒子
+      for(let i=particles.length-1;i>=0;i--){
+        const p = particles[i];
+        p.vy += gravity * 0.12;
+        p.x += p.vx;
+        p.y += p.vy;
+        p.alpha -= p.decay;
+        if(p.alpha <= 0){ particles.splice(i,1); continue; }
+        ctx.globalAlpha = Math.max(0, p.alpha);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+        ctx.fillStyle = p.color;
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+
+    // 交互烟花
+    addEventListener('click', e=> {
+      sparkleAt(e.clientX, e.clientY, 120);
+    });
+    addEventListener('touchstart', e=>{
+      const t = e.touches[0];
+      sparkleAt(t.clientX, t.clientY, 120);
+    }, {passive:true});
+
+    // ====== 运行时自检（简单测试用例）
+    (function selfTests(){
+      console.assert(Array.isArray(QUESTIONS) && QUESTIONS.length === 3, 'QUESTIONS 长度应为 3');
+      console.assert(QUESTIONS[0].options.join(',') === '老爸,老妈,小郭', '第1题选项应为 老爸/老妈/小郭');
+      console.assert(QUESTIONS[1].options.join(',') === '老爸,老妈,小郭', '第2题选项应为 老爸/老妈/小郭');
+      console.assert(typeof BLESSINGS!== 'undefined' && BLESSINGS.length === 6, '应包含 6 条祝福（含署名）');
+      console.assert(document.getElementById('cakeStage') && document.getElementById('cake'), '应存在蛋糕舞台与蛋糕元素');
+      // ✅ 新增：关键节点存在性
+      ;['qText','opts','hint','stepTxt','bar','quiz','done','msgs','again'].forEach(id=>{
+        console.assert(document.getElementById(id), `缺少必要元素 #${id}`);
+      });
+      // ✅ 新增：首次渲染后题目文本应为第1题
+      setTimeout(()=>{
+        const t = document.getElementById('qText')?.textContent || '';
+        console.assert(t.includes('今天谁最帅'), 'renderQuestion 未正确渲染第 1 题');
+      }, 50);
+      // 仍保留：5.5s 后蜡烛应为熄灭状态
+      setTimeout(()=>{
+        const out = document.getElementById('cake').classList.contains('out');
+        console.assert(out, '5秒后蜡烛应熄灭');
+      }, 5500);
+    })();
+
+    // 初始化
+    renderQuestion();
+    // 页面载入后自动播放（若被浏览器阻止，将在用户首次交互时播放）
+    startMusic();
+
+    // 若被策略阻止，首次用户交互时恢复
+    const resumeOnUserGesture = ()=>{
+      if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      ensureMusicStarted();
+      removeEventListener('pointerdown', resumeOnUserGesture);
+    };
+    addEventListener('pointerdown', resumeOnUserGesture, { once: true });
+  </script>
+</body>
+</html>
